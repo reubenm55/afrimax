@@ -311,6 +311,7 @@ footer {
         <a href="#movies">Movies</a>
         <a href="#subscription">Subscribe</a>
         <a href="#about">About</a>
+        <a href="#account">Login / Register</a>
     </nav>
 
     <a href="#subscription" class="header-btn">Join AFRIMAX</a>
@@ -404,6 +405,74 @@ footer {
         These are sample catalogue entries, not available licensed films.
     </p>
 </section>
+    <section class="section" id="account">
+    <h2 class="section-title">AFRIMAX <span>ACCOUNT</span></h2>
+
+    <div class="account-box">
+
+        <div id="authForms">
+            <button onclick="showRegister()">Register</button>
+            <button onclick="showLogin()">Login</button>
+
+            <form id="registerForm">
+                <h3>Create Your Account</h3>
+
+                <input
+                    type="text"
+                    id="registerName"
+                    placeholder="Your full name"
+                    required
+                >
+
+                <input
+                    type="email"
+                    id="registerEmail"
+                    placeholder="Email address"
+                    required
+                >
+
+                <input
+                    type="password"
+                    id="registerPassword"
+                    placeholder="Create password (at least 6 characters)"
+                    minlength="6"
+                    required
+                >
+
+                <button type="submit">Create Account</button>
+            </form>
+
+            <form id="loginForm" style="display:none;">
+                <h3>Welcome Back</h3>
+
+                <input
+                    type="email"
+                    id="loginEmail"
+                    placeholder="Email address"
+                    required
+                >
+
+                <input
+                    type="password"
+                    id="loginPassword"
+                    placeholder="Your password"
+                    required
+                >
+
+                <button type="submit">Login</button>
+            </form>
+        </div>
+
+        <div id="loggedInArea" style="display:none;">
+            <h3>Welcome to AFRIMAX!</h3>
+            <p id="userEmail"></p>
+            <button onclick="logoutUser()">Logout</button>
+        </div>
+
+        <p id="authMessage" class="account-message"
+           aria-live="polite"></p>
+    </div>
+</section>
 
 <section class="section" id="subscription">
     <div class="subscription">
@@ -490,6 +559,121 @@ window.afrimaxSupabase = createClient(
     AFRIMAX_SUPABASE_URL,
     AFRIMAX_SUPABASE_KEY
 );
+    const authClient = window.afrimaxSupabase;
+
+function showRegister() {
+    document.getElementById("registerForm").style.display = "block";
+    document.getElementById("loginForm").style.display = "none";
+    document.getElementById("authMessage").textContent = "";
+}
+
+function showLogin() {
+    document.getElementById("registerForm").style.display = "none";
+    document.getElementById("loginForm").style.display = "block";
+    document.getElementById("authMessage").textContent = "";
+}
+
+// CUSTOMER REGISTRATION
+document.getElementById("registerForm").addEventListener("submit", async function(event) {
+    event.preventDefault();
+
+    const name = document.getElementById("registerName").value.trim();
+    const email = document.getElementById("registerEmail").value.trim();
+    const password = document.getElementById("registerPassword").value;
+
+    const message = document.getElementById("authMessage");
+    message.textContent = "Creating your account...";
+
+    const { data, error } = await authClient.auth.signUp({
+        email: email,
+        password: password,
+        options: {
+            data: {
+                full_name: name
+            }
+        }
+    });
+
+    if (error) {
+        message.textContent = error.message;
+        return;
+    }
+
+    if (data.session) {
+        message.textContent = "Account created successfully!";
+    } else {
+        message.textContent =
+            "Account created! Please check your email and confirm your address before logging in.";
+    }
+
+    document.getElementById("registerForm").reset();
+});
+
+// CUSTOMER LOGIN
+document.getElementById("loginForm").addEventListener("submit", async function(event) {
+    event.preventDefault();
+
+    const email = document.getElementById("loginEmail").value.trim();
+    const password = document.getElementById("loginPassword").value;
+
+    const message = document.getElementById("authMessage");
+    message.textContent = "Logging in...";
+
+    const { data, error } = await authClient.auth.signInWithPassword({
+        email: email,
+        password: password
+    });
+
+    if (error) {
+        message.textContent = error.message;
+        return;
+    }
+
+    message.textContent = "Login successful!";
+    document.getElementById("loginForm").reset();
+    updateAccountDisplay(data.user);
+});
+
+// UPDATE ACCOUNT DISPLAY
+function updateAccountDisplay(user) {
+    const forms = document.getElementById("authForms");
+    const loggedIn = document.getElementById("loggedInArea");
+
+    if (user) {
+        forms.style.display = "none";
+        loggedIn.style.display = "block";
+        document.getElementById("userEmail").textContent =
+            "Logged in as: " + user.email;
+    } else {
+        forms.style.display = "block";
+        loggedIn.style.display = "none";
+    }
+}
+
+// LOGOUT
+async function logoutUser() {
+    const { error } = await authClient.auth.signOut();
+
+    if (error) {
+        document.getElementById("authMessage").textContent = error.message;
+        return;
+    }
+    
+
+    updateAccountDisplay(null);
+    document.getElementById("authMessage").textContent =
+        "You have logged out successfully.";
+}
+
+// CHECK EXISTING LOGIN SESSION
+authClient.auth.getSession().then(({ data, error }) => {
+    if (error) {
+        document.getElementById("authMessage").textContent = error.message;
+        return;
+    }
+
+    updateAccountDisplay(data.session?.user || null);
+});
 
 console.log("AFRIMAX Supabase client initialized");
 </script>
