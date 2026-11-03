@@ -444,5 +444,23 @@ function showPaymentNotice() {
 }
 </script>
 
+
+
+<!-- Supabase connection -->
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+<script>
+  const { createClient } = window.supabase;
+
+  const AFRIMAX_SUPABASE_URL = "https://hanzoehnbuocvngohrkt.supabase.co/rest/v1/";
+  const AFRIMAX_SUPABASE_KEY = "sb_publishable_bNACvuc5S5P68lWsMoP_lw_3gybZGFj";
+
+  window.afrimaxSupabase = createClient(
+    AFRIMAX_SUPABASE_URL,
+    AFRIMAX_SUPABASE_KEY
+  );
+
+  console.log("AFRIMAX Supabase client initialized");
+</script>
 </body>
 </html>
